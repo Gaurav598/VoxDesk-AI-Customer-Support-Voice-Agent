@@ -23,7 +23,7 @@ class TurnRequest(BaseModel):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="AI Voice Agent Platform")
+    app = FastAPI(title="VoxDesk")
     knowledge = InMemoryKnowledgeBase()
     tickets = InMemoryTicketStore()
     orchestrator = ConversationOrchestrator(

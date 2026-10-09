@@ -42,7 +42,7 @@ class JsonRouter:
             )
         if method == "GET" and route_path == "/webhooks/exotel/inbound":
             params = {key: values[-1] for key, values in parse_qs(parsed_path.query).items()}
-            print(f"Exotel inbound webhook received: {params}")
+            print("Exotel inbound webhook received")
             return self._json(
                 200,
                 {
@@ -105,7 +105,7 @@ def browser_call_test_page() -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI Voice Agent Browser Call Test</title>
+  <title>VoxDesk Browser Call Test</title>
   <style>
     :root { color-scheme: dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     body { margin: 0; background: #070707; color: #f4f4f5; }
@@ -133,7 +133,7 @@ def browser_call_test_page() -> str:
 <body>
   <main>
     <section class="card">
-      <h1>AI Voice Agent Browser Call Test</h1>
+      <h1>VoxDesk Browser Call Test</h1>
       <p>This is the local browser version of the phone-call loop: speak → browser STT → backend agent → browser TTS. Use Chrome/Safari with microphone permission.</p>
 
       <label>API token from .env / VOICE_AGENT_API_TOKEN</label>
@@ -426,7 +426,7 @@ def run(host: str = "127.0.0.1", port: int = 8088, db_path: str = "data/voice_ag
     service = PlatformService.local(store=SQLiteStore(Path(db_path)))
     router = create_handler(service, api_token=os.getenv("VOICE_AGENT_API_TOKEN"))
     server = ThreadingHTTPServer((host, port), make_request_handler(router))
-    print(f"AI Voice Agent local API running on http://{host}:{port}")
+    print(f"VoxDesk local API running on http://{host}:{port}")
     serve_until_stopped(server)
 
 
@@ -435,6 +435,6 @@ def serve_until_stopped(server: ThreadingHTTPServer, announce: bool = True) -> N
         server.serve_forever()
     except KeyboardInterrupt:
         if announce:
-            print("\nAI Voice Agent local API stopped")
+            print("\nVoxDesk local API stopped")
     finally:
         server.server_close()

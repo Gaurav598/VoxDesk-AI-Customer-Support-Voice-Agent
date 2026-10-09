@@ -31,7 +31,7 @@ def main() -> None:
         mode=CallMode.SUPPORT,
     )
 
-    print("AI Voice Agent local demo")
+    print("VoxDesk local demo")
     print("Type a customer message. Type 'exit' to stop.")
     while True:
         user_text = input("\nCustomer: ").strip()

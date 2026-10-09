@@ -71,7 +71,7 @@ class LocalHttpServerTests(unittest.TestCase):
 
             self.assertEqual(status, 200)
             self.assertEqual(headers["Content-Type"], "text/html; charset=utf-8")
-            self.assertIn("AI Voice Agent Browser Call Test", body)
+            self.assertIn("VoxDesk Browser Call Test", body)
             self.assertIn("webkitSpeechRecognition", body)
             self.assertIn("/calls/turn", body)
             self.assertIn("Live conversation mode", body)

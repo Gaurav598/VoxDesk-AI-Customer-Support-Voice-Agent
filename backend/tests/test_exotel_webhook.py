@@ -1,5 +1,7 @@
+import io
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 from voice_agent.local_server import create_handler
@@ -13,14 +15,18 @@ class ExotelWebhookTests(unittest.TestCase):
             service = PlatformService.local(store=SQLiteStore(Path(temp_dir) / "voice_agent.db"))
             handler = create_handler(service, api_token="private-api-token")
 
-            status, _headers, body = handler.handle_json(
-                "GET",
-                "/webhooks/exotel/inbound?CallSid=abc&CallFrom=999&CallTo=09513886363",
-                headers={},
-            )
+            log_output = io.StringIO()
+            with redirect_stdout(log_output):
+                status, _headers, body = handler.handle_json(
+                    "GET",
+                    "/webhooks/exotel/inbound?CallSid=abc&CallFrom=999&CallTo=09513886363",
+                    headers={},
+                )
 
             self.assertEqual(status, 200)
             self.assertIn("exotel_inbound_received", body)
+            self.assertNotIn("CallFrom", log_output.getvalue())
+            self.assertNotIn("09513886363", log_output.getvalue())
 
 
 if __name__ == "__main__":
