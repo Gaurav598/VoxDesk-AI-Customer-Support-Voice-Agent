@@ -1,277 +1,470 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VoxDesk — Enterprise AI Voice Agent Platform</title>
-  <meta name="description" content="Local-first autonomous voice agent console for business customer support.">
+  <title>VoxDesk — AI Voice Agent Platform</title>
+  <meta name="description" content="VoxDesk is a premium enterprise AI voice agent operations platform for intelligent customer support at scale.">
+  <meta name="theme-color" content="#0a0f1a">
+
+  <!-- Favicon / PWA -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" type="image/png" href="favicon-32.png">
+  <link rel="apple-touch-icon" href="favicon-180.png">
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Prevent theme flash -->
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('voxdesk_theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = saved === 'light' ? 'light' : saved === 'dark' ? 'dark' : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body>
-  <!-- Ambient backdrop glows -->
-  <div class="ambient-glow glow-1"></div>
-  <div class="ambient-glow glow-2"></div>
 
-  <div class="app-layout">
-    <!-- Top Navigation Header -->
-    <header class="top-nav">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" x2="12" y1="19" y2="22"/>
+  <!-- Background ambient elements -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="ambient-orb orb-1" aria-hidden="true"></div>
+  <div class="ambient-orb orb-2" aria-hidden="true"></div>
+  <div class="ambient-orb orb-3" aria-hidden="true"></div>
+
+  <div class="app-shell">
+
+    <!-- ═══════════════════════ HEADER ═══════════════════════ -->
+    <header class="top-header" role="banner">
+      <div class="header-brand">
+        <!-- SVG Logo -->
+        <div class="brand-logo" aria-label="VoxDesk logo">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="36" height="36" rx="10" fill="url(#logoGrad)"/>
+            <!-- Waveform bars -->
+            <rect x="7" y="17" width="3" height="6" rx="1.5" fill="white" opacity="0.6"/>
+            <rect x="12" y="13" width="3" height="14" rx="1.5" fill="white" opacity="0.8"/>
+            <rect x="17" y="9" width="3" height="22" rx="1.5" fill="white"/>
+            <rect x="22" y="13" width="3" height="14" rx="1.5" fill="white" opacity="0.8"/>
+            <rect x="27" y="17" width="3" height="6" rx="1.5" fill="white" opacity="0.6"/>
+            <!-- AI node dot -->
+            <circle cx="18.5" cy="7" r="2.5" fill="white" opacity="0.9"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0ea5e9"/>
+                <stop offset="100%" stop-color="#10b981"/>
+              </linearGradient>
+            </defs>
           </svg>
         </div>
-        <div class="brand-text">
-          <div class="brand-title">VoxDesk <span class="badge-version">v0.1.0</span></div>
-          <div class="brand-subtitle">Autonomous AI Voice Agent Operations</div>
+        <div class="brand-info">
+          <div class="brand-name">VoxDesk <span class="brand-version">v0.1.0</span></div>
+          <div class="brand-tagline">AI Voice Agent Platform</div>
         </div>
       </div>
 
-      <div class="nav-controls">
-        <div class="status-indicator" id="serverStatusBadge">
-          <span class="status-dot pulsing"></span>
-          <span id="serverStatusText">Checking Backend...</span>
+      <div class="header-controls">
+        <!-- Backend status -->
+        <div class="status-pill" id="serverStatusBadge" role="status" aria-live="polite" aria-label="Backend status">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="serverStatusText">Connecting…</span>
         </div>
 
-        <div class="org-selector">
-          <label for="orgIdInput">Org:</label>
-          <input type="text" id="orgIdInput" value="demo-org" title="Organization ID">
+        <!-- Org selector -->
+        <div class="org-field" title="Organization ID">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <input type="text" id="orgIdInput" value="demo-org" title="Organization ID" aria-label="Organization ID" spellcheck="false">
         </div>
 
-        <button class="btn-icon" id="openSettingsBtn" title="Backend Configuration">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
+        <!-- Theme toggle -->
+        <button class="icon-btn theme-toggle" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle light/dark theme">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <!-- Settings button -->
+        <button class="icon-btn" id="openSettingsBtn" title="Backend settings" aria-label="Open backend settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
     </header>
 
-    <!-- Main Navigation Tabs -->
-    <nav class="main-tabs" role="tablist">
-      <button class="tab-btn active" data-tab="voice-console" id="tab-voice" role="tab" aria-selected="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-        Voice Console
-      </button>
-      <button class="tab-btn" data-tab="tickets-view" id="tab-tickets" role="tab" aria-selected="false">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
-        Tickets (<span id="ticketCountBadge">0</span>)
-      </button>
-      <button class="tab-btn" data-tab="knowledge-view" id="tab-knowledge" role="tab" aria-selected="false">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
-        Knowledge Base (<span id="knowledgeCountBadge">0</span>)
-      </button>
-      <button class="tab-btn" data-tab="calls-view" id="tab-calls" role="tab" aria-selected="false">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Call Transcripts (<span id="callsCountBadge">0</span>)
-      </button>
+    <!-- ═══════════════════════ NAVIGATION ═══════════════════════ -->
+    <nav class="main-nav" role="navigation" aria-label="Main navigation">
+      <div class="nav-tabs" role="tablist">
+        <button class="nav-tab active" data-tab="voice-console" id="tab-voice" role="tab" aria-selected="true" aria-controls="voice-console">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </span>
+          <span class="tab-label">Voice Console</span>
+        </button>
+
+        <button class="nav-tab" data-tab="tickets-view" id="tab-tickets" role="tab" aria-selected="false" aria-controls="tickets-view">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+          </span>
+          <span class="tab-label">Tickets</span>
+          <span class="tab-badge" id="ticketCountBadge" aria-label="ticket count">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="knowledge-view" id="tab-knowledge" role="tab" aria-selected="false" aria-controls="knowledge-view">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/><path d="M6 14h6"/></svg>
+          </span>
+          <span class="tab-label">Knowledge Base</span>
+          <span class="tab-badge" id="knowledgeCountBadge" aria-label="knowledge count">0</span>
+        </button>
+
+        <button class="nav-tab" data-tab="calls-view" id="tab-calls" role="tab" aria-selected="false" aria-controls="calls-view">
+          <span class="tab-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.19 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </span>
+          <span class="tab-label">Transcripts</span>
+          <span class="tab-badge" id="callsCountBadge" aria-label="calls count">0</span>
+        </button>
+      </div>
+      <div class="nav-tab-indicator" id="navTabIndicator" aria-hidden="true"></div>
     </nav>
 
-    <!-- Content Sections -->
-    <main class="tab-content-container">
-      
-      <!-- 1. Voice Console View -->
-      <section class="tab-panel active" id="voice-console" role="tabpanel">
-        <div class="console-grid">
-          <!-- Voice Visualizer & Controls Card -->
-          <div class="card voice-hub-card">
-            <div class="card-header">
-              <div class="header-left">
-                <span class="live-pill" id="agentStatePill">IDLE</span>
-                <h3>Live Call Interface</h3>
+    <!-- ═══════════════════════ MAIN CONTENT ═══════════════════════ -->
+    <main class="content-area" id="mainContent">
+
+      <!-- ── 1. VOICE CONSOLE ── -->
+      <section class="tab-panel active" id="voice-console" role="tabpanel" aria-labelledby="tab-voice">
+        <div class="console-layout">
+
+          <!-- Left: Voice Hub -->
+          <div class="voice-hub">
+            <!-- Call Status Bar -->
+            <div class="call-status-bar">
+              <div class="call-state-badge" id="agentStatePill" data-state="idle">
+                <span class="state-dot"></span>
+                <span class="state-text">IDLE</span>
               </div>
-              <div class="header-right">
-                <select id="callLanguage" class="select-pill" title="Audio Language">
+              <h2 class="voice-hub-title">Live Call Interface</h2>
+              <div class="language-select-wrapper">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                <select id="callLanguage" class="lang-select" title="Audio Language" aria-label="Select call language">
                   <option value="en-IN">🇮🇳 English (India)</option>
-                  <option value="hi-IN">🇮🇳 Hindi (India)</option>
-                  <option value="te-IN">🇮🇳 Telugu (India)</option>
+                  <option value="hi-IN">🇮🇳 Hindi</option>
+                  <option value="te-IN">🇮🇳 Telugu</option>
+                  <option value="en-US">🇺🇸 English (US)</option>
                 </select>
               </div>
             </div>
 
-            <!-- Waveform Canvas -->
-            <div class="visualizer-container">
-              <canvas id="waveformCanvas" width="600" height="140"></canvas>
-              <div class="visualizer-overlay" id="visualizerOverlay">
-                <div class="agent-avatar" id="avatarCircle">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <!-- Voice Visualizer -->
+            <div class="visualizer-wrap" id="visualizerWrap">
+              <canvas id="waveformCanvas" aria-hidden="true"></canvas>
+
+              <!-- State overlay -->
+              <div class="vis-overlay" id="visualizerOverlay">
+                <div class="agent-avatar" id="avatarCircle" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="5" y="19" width="4" height="8" rx="2" fill="white" opacity="0.6"/>
+                    <rect x="11" y="14" width="4" height="16" rx="2" fill="white" opacity="0.8"/>
+                    <rect x="17" y="9" width="4" height="22" rx="2" fill="white"/>
+                    <rect x="23" y="14" width="4" height="16" rx="2" fill="white" opacity="0.8"/>
+                    <rect x="29" y="19" width="4" height="8" rx="2" fill="white" opacity="0.6"/>
+                    <circle cx="19" cy="7" r="3" fill="white" opacity="0.9"/>
+                  </svg>
                 </div>
-                <div class="visualizer-status" id="callStatusText">Ready to start voice conversation</div>
+                <div class="vis-status" id="callStatusText">Ready to start voice conversation</div>
+                <div class="vis-sublabel" id="callSubLabel"></div>
               </div>
             </div>
 
-            <!-- Call Action Toolbar -->
-            <div class="voice-actions">
-              <div class="caller-meta">
-                <label for="callerPhoneInput">Caller Phone / ID:</label>
-                <input type="text" id="callerPhoneInput" value="+91 98765 43210" class="input-flat">
+            <!-- Call Controls -->
+            <div class="call-controls">
+              <div class="caller-id-field">
+                <label for="callerPhoneInput" class="field-label">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.19 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Caller Phone / ID
+                </label>
+                <input type="tel" id="callerPhoneInput" value="+91 98765 43210" class="text-input" placeholder="+91 98765 43210" autocomplete="off">
               </div>
 
-              <div class="action-buttons">
-                <button id="startCallBtn" class="btn btn-primary btn-call">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  Start Live Voice Call
+              <div class="call-btn-group">
+                <button id="startCallBtn" class="btn btn-start" aria-label="Start live voice call">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.19 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Start Live Call
                 </button>
-                <button id="endCallBtn" class="btn btn-danger" disabled>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" x2="2" y1="2" y2="22"/></svg>
+                <button id="endCallBtn" class="btn btn-end" disabled aria-label="End current call">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" x2="2" y1="2" y2="22"/></svg>
                   End Call
                 </button>
               </div>
             </div>
 
-            <!-- Text Input Fallback Area -->
-            <div class="text-turn-box">
-              <label for="textTurnInput">Or test by typing a customer query:</label>
-              <div class="turn-input-group">
-                <input type="text" id="textTurnInput" placeholder="e.g. 'I was charged 500 rupees but my order failed'..." class="input-flat">
-                <button id="sendTurnBtn" class="btn btn-secondary">Send Message</button>
+            <!-- Text Query -->
+            <div class="text-query-section">
+              <div class="text-query-label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Test with text query
+              </div>
+              <div class="text-query-row">
+                <input type="text" id="textTurnInput" class="text-input text-query-input" placeholder="e.g. 'I was charged ₹500 but my order failed…'" aria-label="Type a customer query to test">
+                <button id="sendTurnBtn" class="btn btn-send" aria-label="Send query">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Send
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- Live Feed & Decision Radar -->
+          <!-- Right: Sidebar -->
           <div class="console-sidebar">
-            <!-- Decision Radar -->
-            <div class="card decision-card">
-              <h4>AI Decision Radar</h4>
-              <div class="decision-stats">
-                <div class="stat-item">
-                  <span class="stat-label">Detected Intent</span>
-                  <span class="stat-value" id="radarIntent">—</span>
+
+            <!-- AI Decision Radar -->
+            <div class="panel-card radar-card">
+              <div class="panel-card-header">
+                <div class="panel-card-title">
+                  <span class="panel-card-icon radar-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                  </span>
+                  AI Decision Radar
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Decision Status</span>
-                  <span class="stat-value" id="radarStatus">—</span>
+                <span class="panel-card-live" id="radarLivePing" aria-hidden="true">
+                  <span class="live-ring"></span>
+                </span>
+              </div>
+
+              <div class="radar-grid">
+                <div class="radar-item" id="radarIntentItem">
+                  <div class="radar-item-icon intent-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </div>
+                  <div class="radar-item-content">
+                    <span class="radar-label">Detected Intent</span>
+                    <span class="radar-value" id="radarIntent">Awaiting input…</span>
+                  </div>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Action Executed</span>
-                  <span class="stat-value highlight" id="radarActions">—</span>
+
+                <div class="radar-item" id="radarStatusItem">
+                  <div class="radar-item-icon status-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  </div>
+                  <div class="radar-item-content">
+                    <span class="radar-label">Decision Status</span>
+                    <span class="radar-value" id="radarStatus">—</span>
+                  </div>
                 </div>
-                <div class="stat-item" id="radarTicketBox" style="display:none;">
-                  <span class="stat-label">Ticket Generated</span>
-                  <span class="stat-value badge-ticket" id="radarTicketId">—</span>
+
+                <div class="radar-item full-span" id="radarActionsItem">
+                  <div class="radar-item-icon action-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  </div>
+                  <div class="radar-item-content">
+                    <span class="radar-label">Action Executed</span>
+                    <span class="radar-value highlight" id="radarActions">—</span>
+                  </div>
+                </div>
+
+                <div class="radar-item full-span" id="radarTicketBox" style="display:none;">
+                  <div class="radar-item-icon ticket-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                  </div>
+                  <div class="radar-item-content">
+                    <span class="radar-label">Ticket Generated</span>
+                    <span class="radar-value ticket-badge" id="radarTicketId">—</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Live Dialogue Transcript -->
-            <div class="card transcript-card">
-              <div class="card-header-sm">
-                <h4>Live Dialogue</h4>
-                <button id="clearChatBtn" class="btn-link">Clear</button>
+            <!-- Live Dialogue -->
+            <div class="panel-card dialogue-card">
+              <div class="panel-card-header">
+                <div class="panel-card-title">
+                  <span class="panel-card-icon dialogue-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </span>
+                  Live Dialogue
+                </div>
+                <button id="clearChatBtn" class="ghost-btn" aria-label="Clear conversation">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  Clear
+                </button>
               </div>
-              <div class="dialogue-scroll" id="dialogueContainer">
-                <div class="chat-placeholder">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  <p>Speech will stream here in real-time as dialogue progresses.</p>
+
+              <div class="dialogue-scroll" id="dialogueContainer" role="log" aria-label="Conversation dialogue" aria-live="polite">
+                <div class="dialogue-empty" id="dialogueEmpty">
+                  <div class="dialogue-empty-icon" aria-hidden="true">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <p>Dialogue streams here in real-time as calls progress.</p>
                 </div>
               </div>
             </div>
+
+          </div><!-- /sidebar -->
+        </div><!-- /console-layout -->
+      </section>
+
+      <!-- ── 2. SUPPORT TICKETS ── -->
+      <section class="tab-panel" id="tickets-view" role="tabpanel" aria-labelledby="tab-tickets">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Support Tickets</h1>
+            <p class="section-desc">Automatically opened by VoxDesk AI when callers report unresolved issues or grievances.</p>
+          </div>
+          <button id="refreshTicketsBtn" class="btn btn-outline" aria-label="Refresh tickets">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div class="tickets-grid" id="ticketsGrid" role="list" aria-label="Support tickets">
+          <div class="loading-state" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            Fetching tickets…
           </div>
         </div>
       </section>
 
-      <!-- 2. Support Tickets View -->
-      <section class="tab-panel" id="tickets-view" role="tabpanel">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <h3>Support Tickets</h3>
-              <p class="card-desc">Automatically opened by VoxDesk AI when caller reports unresolved issues or grievances.</p>
-            </div>
-            <button id="refreshTicketsBtn" class="btn btn-secondary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-              Refresh Tickets
-            </button>
-          </div>
-
-          <div class="tickets-grid" id="ticketsGrid">
-            <!-- Dynamic Ticket Cards -->
-            <div class="loading-state">Fetching tickets from SQLite store...</div>
+      <!-- ── 3. KNOWLEDGE BASE ── -->
+      <section class="tab-panel" id="knowledge-view" role="tabpanel" aria-labelledby="tab-knowledge">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Knowledge Base</h1>
+            <p class="section-desc">Add business rules, policies, and FAQs. VoxDesk retrieves these during calls to formulate answers.</p>
           </div>
         </div>
-      </section>
-
-      <!-- 3. Knowledge Base View -->
-      <section class="tab-panel" id="knowledge-view" role="tabpanel">
-        <div class="knowledge-grid">
-          <!-- Add Knowledge Form -->
-          <div class="card">
-            <h3>Add Organization Knowledge</h3>
-            <p class="card-desc">Add business rules, policies, and FAQs. VoxDesk retrieves these during calls to formulate answers.</p>
-            <form id="addKnowledgeForm" class="form-vertical">
-              <div class="form-group">
-                <label for="docTextInput">Knowledge Text / Policy / FAQ:</label>
-                <textarea id="docTextInput" rows="5" class="input-flat" placeholder="e.g. 'If a customer reports money was deducted but order was not placed, assure them an automated refund is initiated within 3-5 business days and file a priority ticket.'"></textarea>
+        <div class="knowledge-layout">
+          <!-- Add Form -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-title">
+                <span class="panel-card-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                </span>
+                Add Knowledge Entry
               </div>
-              <button type="submit" class="btn btn-primary" id="saveDocBtn">Index & Store Document</button>
+            </div>
+            <form id="addKnowledgeForm" class="form-stack" novalidate>
+              <div class="form-field">
+                <label for="docTextInput" class="field-label">Knowledge text, policy, or FAQ</label>
+                <textarea id="docTextInput" rows="6" class="text-input text-area" placeholder="e.g. 'If a customer reports money was deducted but order was not placed, assure them an automated refund is initiated within 3–5 business days and file a priority ticket.'" aria-describedby="docTextHint"></textarea>
+                <span class="field-hint" id="docTextHint">This will be indexed and retrieved by the AI during live calls.</span>
+              </div>
+              <button type="submit" class="btn btn-start" id="saveDocBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Index &amp; Store Document
+              </button>
             </form>
           </div>
 
-          <!-- Existing Knowledge List -->
-          <div class="card">
-            <div class="card-header-sm">
-              <h3>Indexed Documents</h3>
-              <button id="refreshKnowledgeBtn" class="btn-link">Refresh</button>
+          <!-- Knowledge List -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <div class="panel-card-title">
+                <span class="panel-card-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
+                </span>
+                Indexed Documents
+              </div>
+              <button id="refreshKnowledgeBtn" class="ghost-btn" aria-label="Refresh knowledge base">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                Refresh
+              </button>
             </div>
-            <div class="knowledge-list" id="knowledgeListContainer">
-              <div class="loading-state">Loading indexed knowledge...</div>
+            <div class="knowledge-list" id="knowledgeListContainer" role="list">
+              <div class="loading-state" role="status">
+                <span class="spinner" aria-hidden="true"></span>
+                Loading knowledge…
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 4. Call Transcripts View -->
-      <section class="tab-panel" id="calls-view" role="tabpanel">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <h3>Call Session History</h3>
-              <p class="card-desc">Complete audit trail of all telephone and browser conversations.</p>
-            </div>
-            <button id="refreshCallsBtn" class="btn btn-secondary">Refresh Calls</button>
+      <!-- ── 4. CALL TRANSCRIPTS ── -->
+      <section class="tab-panel" id="calls-view" role="tabpanel" aria-labelledby="tab-calls">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Call Transcripts</h1>
+            <p class="section-desc">Complete audit trail of all telephone and browser conversations.</p>
           </div>
-
-          <div class="calls-list" id="callsListContainer">
-            <div class="loading-state">Loading call sessions...</div>
+          <button id="refreshCallsBtn" class="btn btn-outline" aria-label="Refresh call transcripts">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div class="calls-list" id="callsListContainer" role="list">
+          <div class="loading-state" role="status">
+            <span class="spinner" aria-hidden="true"></span>
+            Loading call sessions…
           </div>
         </div>
       </section>
 
-    </main>
-  </div>
+    </main><!-- /content-area -->
+  </div><!-- /app-shell -->
 
-  <!-- Settings Modal -->
-  <dialog id="settingsModal" class="custom-modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>VoxDesk Backend Settings</h3>
-        <button id="closeSettingsBtn" class="btn-close">&times;</button>
+  <!-- ═══════════════════════ SETTINGS MODAL ═══════════════════════ -->
+  <dialog id="settingsModal" class="modal-dialog" aria-labelledby="settingsModalTitle">
+    <div class="modal-surface">
+      <div class="modal-top">
+        <div class="modal-title-row">
+          <span class="modal-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <h2 class="modal-title" id="settingsModalTitle">Backend Settings</h2>
+        </div>
+        <button id="closeSettingsBtn" class="modal-close-btn" aria-label="Close settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
+
       <div class="modal-body">
-        <div class="form-group">
-          <label for="apiUrlInput">Backend API URL:</label>
-          <input type="text" id="apiUrlInput" value="http://127.0.0.1:8088" class="input-flat">
+        <div class="form-field">
+          <label for="apiUrlInput" class="field-label">Backend API URL</label>
+          <input type="url" id="apiUrlInput" value="http://127.0.0.1:8088" class="text-input" placeholder="http://127.0.0.1:8088" autocomplete="off" spellcheck="false">
         </div>
-        <div class="form-group">
-          <label for="apiTokenInput">API Token (`VOICE_AGENT_API_TOKEN`):</label>
-          <input type="password" id="apiTokenInput" placeholder="Enter token from .env" class="input-flat">
-          <small class="hint">Matches `VOICE_AGENT_API_TOKEN` in `.env` (default: voxdesk_secret_token_2026)</small>
+        <div class="form-field">
+          <label for="apiTokenInput" class="field-label">API Token</label>
+          <input type="password" id="apiTokenInput" class="text-input" placeholder="Enter token from .env" autocomplete="current-password">
+          <span class="field-hint">Matches <code>VOICE_AGENT_API_TOKEN</code> in <code>.env</code> (default: voxdesk_secret_token_2026)</span>
+        </div>
+
+        <!-- Theme setting inside modal -->
+        <div class="form-field">
+          <label class="field-label">Interface Theme</label>
+          <div class="theme-options" role="group" aria-label="Theme selection">
+            <button class="theme-opt-btn" data-theme-val="dark" aria-pressed="true" id="themeOptDark">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              Dark
+            </button>
+            <button class="theme-opt-btn" data-theme-val="light" aria-pressed="false" id="themeOptLight">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+              Light
+            </button>
+            <button class="theme-opt-btn" data-theme-val="system" aria-pressed="false" id="themeOptSystem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+              System
+            </button>
+          </div>
         </div>
       </div>
+
       <div class="modal-footer">
-        <button id="saveSettingsBtn" class="btn btn-primary">Save & Connect</button>
+        <button id="saveSettingsBtn" class="btn btn-start">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save &amp; Connect
+        </button>
       </div>
     </div>
   </dialog>
 
-  <!-- Audio playback element -->
-  <audio id="ttsAudioPlayer" style="display:none;"></audio>
+  <!-- Hidden audio player -->
+  <audio id="ttsAudioPlayer" style="display:none;" aria-hidden="true"></audio>
 
   <script src="app.js"></script>
 </body>

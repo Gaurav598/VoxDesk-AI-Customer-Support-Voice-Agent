@@ -1,11 +1,13 @@
-// VoxDesk Dedicated Frontend Controller
+// VoxDesk Frontend Controller — Redesigned UI + Preserved Backend Logic
 (() => {
-  // Config & State
+  // ─── CONFIG & STATE ───────────────────────────────────────────────
   const state = {
-    apiUrl: localStorage.getItem("voxdesk_api_url") || (window.location.port === "3001" ? "/api" : "http://127.0.0.1:8088"),
+    apiUrl: localStorage.getItem("voxdesk_api_url") ||
+      (window.location.port === "3001" ? "/api" : "http://127.0.0.1:8088"),
     apiToken: localStorage.getItem("voxdesk_api_token") || "voxdesk_secret_token_2026",
     orgId: localStorage.getItem("voxdesk_org_id") || "demo-org",
     callerPhone: localStorage.getItem("voxdesk_caller_phone") || "+91 98765 43210",
+    theme: localStorage.getItem("voxdesk_theme") || "system",
     isCalling: false,
     isSpeaking: false,
     activeTab: "voice-console",
@@ -13,102 +15,132 @@
     audioContext: null,
     analyser: null,
     waveformPhase: 0,
+    animFrameId: null,
   };
 
-  // DOM Elements
-  const serverStatusBadge = document.getElementById("serverStatusBadge");
-  const serverStatusText = document.getElementById("serverStatusText");
-  const orgIdInput = document.getElementById("orgIdInput");
-  const callerPhoneInput = document.getElementById("callerPhoneInput");
-  const callLanguage = document.getElementById("callLanguage");
-  const startCallBtn = document.getElementById("startCallBtn");
-  const endCallBtn = document.getElementById("endCallBtn");
-  const textTurnInput = document.getElementById("textTurnInput");
-  const sendTurnBtn = document.getElementById("sendTurnBtn");
-  const dialogueContainer = document.getElementById("dialogueContainer");
-  const clearChatBtn = document.getElementById("clearChatBtn");
-  const avatarCircle = document.getElementById("avatarCircle");
-  const agentStatePill = document.getElementById("agentStatePill");
-  const callStatusText = document.getElementById("callStatusText");
-  
-  // Radar Elements
-  const radarIntent = document.getElementById("radarIntent");
-  const radarStatus = document.getElementById("radarStatus");
-  const radarActions = document.getElementById("radarActions");
-  const radarTicketBox = document.getElementById("radarTicketBox");
-  const radarTicketId = document.getElementById("radarTicketId");
+  // ─── DOM REFS ─────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
 
-  // Badges & Views
-  const ticketCountBadge = document.getElementById("ticketCountBadge");
-  const knowledgeCountBadge = document.getElementById("knowledgeCountBadge");
-  const callsCountBadge = document.getElementById("callsCountBadge");
-  const ticketsGrid = document.getElementById("ticketsGrid");
-  const knowledgeListContainer = document.getElementById("knowledgeListContainer");
-  const callsListContainer = document.getElementById("callsListContainer");
-  const addKnowledgeForm = document.getElementById("addKnowledgeForm");
-  const docTextInput = document.getElementById("docTextInput");
-  const ttsAudioPlayer = document.getElementById("ttsAudioPlayer");
+  const serverStatusBadge  = $("serverStatusBadge");
+  const serverStatusText   = $("serverStatusText");
+  const orgIdInput         = $("orgIdInput");
+  const callerPhoneInput   = $("callerPhoneInput");
+  const callLanguage       = $("callLanguage");
+  const startCallBtn       = $("startCallBtn");
+  const endCallBtn         = $("endCallBtn");
+  const textTurnInput      = $("textTurnInput");
+  const sendTurnBtn        = $("sendTurnBtn");
+  const dialogueContainer  = $("dialogueContainer");
+  const clearChatBtn       = $("clearChatBtn");
+  const avatarCircle       = $("avatarCircle");
+  const agentStatePill     = $("agentStatePill");
+  const callStatusText     = $("callStatusText");
+  const callSubLabel       = $("callSubLabel");
 
-  // Settings Modal Elements
-  const settingsModal = document.getElementById("settingsModal");
-  const openSettingsBtn = document.getElementById("openSettingsBtn");
-  const closeSettingsBtn = document.getElementById("closeSettingsBtn");
-  const saveSettingsBtn = document.getElementById("saveSettingsBtn");
-  const apiUrlInput = document.getElementById("apiUrlInput");
-  const apiTokenInput = document.getElementById("apiTokenInput");
+  const radarIntent    = $("radarIntent");
+  const radarStatus    = $("radarStatus");
+  const radarActions   = $("radarActions");
+  const radarTicketBox = $("radarTicketBox");
+  const radarTicketId  = $("radarTicketId");
 
-  // Canvas Waveform
-  const canvas = document.getElementById("waveformCanvas");
-  const ctx = canvas ? canvas.getContext("2d") : null;
+  const ticketCountBadge    = $("ticketCountBadge");
+  const knowledgeCountBadge = $("knowledgeCountBadge");
+  const callsCountBadge     = $("callsCountBadge");
+  const ticketsGrid         = $("ticketsGrid");
+  const knowledgeListContainer = $("knowledgeListContainer");
+  const callsListContainer  = $("callsListContainer");
+  const addKnowledgeForm    = $("addKnowledgeForm");
+  const docTextInput        = $("docTextInput");
+  const ttsAudioPlayer      = $("ttsAudioPlayer");
 
-  // Initialize
+  const settingsModal    = $("settingsModal");
+  const openSettingsBtn  = $("openSettingsBtn");
+  const closeSettingsBtn = $("closeSettingsBtn");
+  const saveSettingsBtn  = $("saveSettingsBtn");
+  const apiUrlInput      = $("apiUrlInput");
+  const apiTokenInput    = $("apiTokenInput");
+  const themeToggleBtn   = $("themeToggleBtn");
+
+  const canvas = $("waveformCanvas");
+  const ctx    = canvas ? canvas.getContext("2d") : null;
+
+  // ─── INIT ─────────────────────────────────────────────────────────
   function init() {
-    orgIdInput.value = state.orgId;
+    orgIdInput.value       = state.orgId;
     callerPhoneInput.value = state.callerPhone;
-    apiUrlInput.value = state.apiUrl;
-    apiTokenInput.value = state.apiToken;
+    apiUrlInput.value      = state.apiUrl;
+    apiTokenInput.value    = state.apiToken;
+
+    applyTheme(state.theme, /* persist */ false);
+    setupThemeUI(state.theme);
 
     setupTabs();
     setupEventListeners();
     setupCanvasAnimation();
     setupSpeechRecognition();
-    
-    // Initial data fetches & status ping
+
     pingBackend();
     setInterval(pingBackend, 6000);
     loadAllData();
   }
 
-  // HTTP Helper with auth
+  // ─── THEME ────────────────────────────────────────────────────────
+  function applyTheme(themeVal, persist = true) {
+    let resolved = themeVal;
+    if (themeVal === "system") {
+      resolved = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.setAttribute("data-theme", resolved);
+    if (persist) {
+      localStorage.setItem("voxdesk_theme", themeVal);
+      state.theme = themeVal;
+    }
+    // Update canvas colors on next draw
+  }
+
+  function setupThemeUI(themeVal) {
+    // Update theme opt buttons in modal
+    ["dark", "light", "system"].forEach(v => {
+      const btn = $(`themeOpt${v.charAt(0).toUpperCase() + v.slice(1)}`);
+      if (btn) btn.setAttribute("aria-pressed", (themeVal === v).toString());
+    });
+  }
+
+  function cycleTheme() {
+    const order = ["dark", "light", "system"];
+    const next  = order[(order.indexOf(state.theme) + 1) % order.length];
+    applyTheme(next);
+    setupThemeUI(next);
+  }
+
+  // ─── HTTP ─────────────────────────────────────────────────────────
   async function apiFetch(endpoint, options = {}) {
-    // If running under nginx proxy, fallback to relative URL or direct backend URL
     const url = state.apiUrl.replace(/\/+$/, "") + endpoint;
     const headers = {
       "Content-Type": "application/json",
       ...(state.apiToken ? { "X-Voice-Agent-Token": state.apiToken } : {}),
-      ...(options.headers || {})
+      ...(options.headers || {}),
     };
-
     return fetch(url, { ...options, headers });
   }
 
-  // Ping Backend Health
+  // ─── BACKEND PING ─────────────────────────────────────────────────
   async function pingBackend() {
     try {
       const res = await apiFetch("/health", { method: "GET" });
       if (res.ok) {
-        serverStatusBadge.className = "status-indicator";
-        serverStatusText.textContent = "Engine Connected (8088)";
+        serverStatusBadge.className = "status-pill connected";
+        serverStatusText.textContent = "Engine Connected";
       } else {
         throw new Error("HTTP " + res.status);
       }
-    } catch (err) {
-      serverStatusBadge.className = "status-indicator error";
+    } catch {
+      serverStatusBadge.className = "status-pill error";
       serverStatusText.textContent = "Engine Offline";
     }
   }
 
-  // Load Tickets, Knowledge, Calls
+  // ─── DATA LOADING ─────────────────────────────────────────────────
   async function loadAllData() {
     loadTickets();
     loadKnowledge();
@@ -119,7 +151,7 @@
     try {
       const res = await apiFetch("/tickets");
       if (res.ok) {
-        const data = await res.json();
+        const data    = await res.json();
         const tickets = data.tickets || [];
         ticketCountBadge.textContent = tickets.length;
         renderTickets(tickets);
@@ -132,21 +164,36 @@
   function renderTickets(tickets) {
     if (!ticketsGrid) return;
     if (tickets.length === 0) {
-      ticketsGrid.innerHTML = `<div class="empty-state">No support tickets generated yet. Start a call and simulate an issue to see tickets appear automatically!</div>`;
+      ticketsGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+            </svg>
+          </div>
+          <strong>No tickets yet</strong>
+          <span>Tickets appear automatically when callers report unresolved issues.</span>
+        </div>`;
       return;
     }
 
-    ticketsGrid.innerHTML = tickets.map(t => `
-      <div class="ticket-card">
-        <div class="ticket-top">
-          <span class="ticket-id">${t.id}</span>
-          <span class="badge-version">OPEN</span>
+    ticketsGrid.innerHTML = tickets.map((t, i) => `
+      <div class="ticket-card" role="listitem" style="animation-delay:${i * 50}ms">
+        <div class="ticket-header">
+          <span class="ticket-id">${escapeHtml(t.id)}</span>
+          <span class="ticket-status-badge">OPEN</span>
         </div>
         <div class="ticket-title">${escapeHtml(t.title)}</div>
         <div class="ticket-desc">${escapeHtml(t.description)}</div>
         <div class="ticket-footer">
-          <span>Caller: ${escapeHtml(t.caller_phone)}</span>
-          <span>Call: ${escapeHtml(t.call_id)}</span>
+          <div class="ticket-footer-item">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.19 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            ${escapeHtml(t.caller_phone)}
+          </div>
+          <div class="ticket-footer-item">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            ${escapeHtml(t.call_id)}
+          </div>
         </div>
       </div>
     `).join("");
@@ -157,7 +204,7 @@
       const res = await apiFetch(`/knowledge?organization_id=${encodeURIComponent(state.orgId)}`);
       if (res.ok) {
         const data = await res.json();
-        const docs = data.knowledge || [];
+        const docs  = data.knowledge || [];
         knowledgeCountBadge.textContent = docs.length;
         renderKnowledge(docs);
       }
@@ -169,13 +216,25 @@
   function renderKnowledge(docs) {
     if (!knowledgeListContainer) return;
     if (docs.length === 0) {
-      knowledgeListContainer.innerHTML = `<div class="empty-state">No knowledge indexed for ${escapeHtml(state.orgId)}. Add policies or FAQs using the form!</div>`;
+      knowledgeListContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            </svg>
+          </div>
+          <strong>No knowledge indexed</strong>
+          <span>Add policies or FAQs using the form to get started.</span>
+        </div>`;
       return;
     }
 
-    knowledgeListContainer.innerHTML = docs.map(d => `
-      <div class="doc-card">
-        <div class="doc-id">${d.id} • ${escapeHtml(d.organization_id)}</div>
+    knowledgeListContainer.innerHTML = docs.map((d, i) => `
+      <div class="doc-card" role="listitem" style="animation-delay:${i * 40}ms">
+        <div class="doc-meta">
+          <span class="doc-id">#${escapeHtml(String(d.id))}</span>
+          <span class="doc-org">${escapeHtml(d.organization_id)}</span>
+        </div>
         <div class="doc-text">${escapeHtml(d.text)}</div>
       </div>
     `).join("");
@@ -185,7 +244,7 @@
     try {
       const res = await apiFetch(`/calls?organization_id=${encodeURIComponent(state.orgId)}`);
       if (res.ok) {
-        const data = await res.json();
+        const data  = await res.json();
         const calls = data.calls || [];
         callsCountBadge.textContent = calls.length;
         renderCalls(calls);
@@ -198,103 +257,112 @@
   function renderCalls(calls) {
     if (!callsListContainer) return;
     if (calls.length === 0) {
-      callsListContainer.innerHTML = `<div class="empty-state">No call logs recorded yet.</div>`;
+      callsListContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.19 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <strong>No calls recorded</strong>
+          <span>Call transcripts will appear here after sessions complete.</span>
+        </div>`;
       return;
     }
 
-    callsListContainer.innerHTML = calls.map(c => `
-      <div class="call-item">
-        <div class="call-header-meta">
-          <span class="call-id-badge">${c.id}</span>
-          <span class="badge-version">${c.language} • ${c.caller_phone}</span>
+    callsListContainer.innerHTML = calls.map((c, i) => `
+      <div class="call-item" role="listitem" style="animation-delay:${i * 50}ms">
+        <div class="call-meta-row">
+          <span class="call-id-chip">${escapeHtml(c.id)}</span>
+          <div class="call-meta-chips">
+            <span class="call-chip">${escapeHtml(c.language || "—")}</span>
+            <span class="call-chip">${escapeHtml(c.caller_phone || "—")}</span>
+          </div>
         </div>
-        <div class="call-turns-wrapper">
-          ${(c.turns || []).map(turn => `<div>${escapeHtml(turn)}</div>`).join("")}
+        <div class="call-turns">
+          ${(c.turns || []).length === 0
+            ? `<div class="call-turn-line" style="color:var(--text-muted)">No turns recorded.</div>`
+            : (c.turns || []).map(t => `<div class="call-turn-line">${escapeHtml(t)}</div>`).join("")}
         </div>
       </div>
     `).join("");
   }
 
-  // Handle Turn Submission
+  // ─── TURN HANDLING (preserved backend logic) ───────────────────────
   async function handleTurn(text) {
     if (!text || !text.trim()) return;
     const cleanText = text.trim();
 
-    // Append customer message
-    appendBubble("customer", cleanText);
-
-    // Update status
-    agentStatePill.textContent = "THINKING";
-    agentStatePill.className = "live-pill";
-    callStatusText.textContent = "AI is evaluating response & policies...";
+    appendMessage("customer", cleanText);
+    setAgentState("thinking", "AI is evaluating response & policies…", "");
 
     try {
       const payload = {
         organization_id: state.orgId,
-        caller_phone: state.callerPhone,
-        text: cleanText,
-        language: callLanguage.value,
+        caller_phone:    state.callerPhone,
+        text:            cleanText,
+        language:        callLanguage.value,
       };
 
       const res = await apiFetch("/calls/turn", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body:   JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error("HTTP error " + res.status);
-      }
+      if (!res.ok) throw new Error("HTTP error " + res.status);
 
       const decision = await res.json();
 
-      // Update Radar
-      radarIntent.textContent = decision.intent || "—";
-      radarStatus.textContent = decision.status || "—";
-      radarActions.textContent = (decision.actions || []).join(", ") || "REPLY";
+      // Update Radar with flash animation
+      updateRadarItem("radarIntentItem",  () => { radarIntent.textContent  = decision.intent  || "—"; });
+      updateRadarItem("radarStatusItem",  () => { radarStatus.textContent  = decision.status  || "—"; });
+      updateRadarItem("radarActionsItem", () => { radarActions.textContent = (decision.actions || []).join(", ") || "REPLY"; });
 
       if (decision.ticket_id) {
-        radarTicketBox.style.display = "block";
-        radarTicketId.textContent = decision.ticket_id;
+        radarTicketBox.style.display = "flex";
+        updateRadarItem("radarTicketBox", () => { radarTicketId.textContent = decision.ticket_id; });
         loadTickets();
       }
 
-      // Append agent reply
-      appendBubble("agent", decision.reply);
-
-      // Play synthesized voice
+      appendMessage("agent", decision.reply);
       await playTTS(decision.reply, callLanguage.value);
-
-      // Refresh calls history
       loadCalls();
 
     } catch (err) {
-      appendBubble("agent", "Error connecting to AI engine: " + err.message);
+      appendMessage("agent", "Error connecting to AI engine: " + err.message);
+      setAgentState("error", "Connection error", "Check backend settings");
+      return;
     } finally {
       if (state.isCalling) {
-        agentStatePill.textContent = "LISTENING";
-        agentStatePill.className = "live-pill listening";
-        callStatusText.textContent = "Listening to your voice (speak now)...";
+        setAgentState("listening", "Listening — speak into your microphone", "Live call active");
       } else {
-        agentStatePill.textContent = "IDLE";
-        agentStatePill.className = "live-pill";
-        callStatusText.textContent = "Ready to start call";
+        setAgentState("idle", "Ready to start voice conversation", "");
       }
     }
   }
 
-  // Play TTS
+  function updateRadarItem(itemId, updateFn) {
+    const el = $(itemId);
+    if (!el) return;
+    updateFn();
+    el.classList.add("updated");
+    setTimeout(() => el.classList.remove("updated"), 800);
+  }
+
+  // ─── TTS (preserved) ─────────────────────────────────────────────
   async function playTTS(text, lang) {
     try {
       const res = await apiFetch("/tts/synthesize", {
         method: "POST",
-        body: JSON.stringify({ text, language: lang }),
+        body:   JSON.stringify({ text, language: lang }),
       });
 
       if (res.ok) {
-        const blob = await res.blob();
+        const blob     = await res.blob();
         const audioUrl = URL.createObjectURL(blob);
         ttsAudioPlayer.src = audioUrl;
         state.isSpeaking = true;
+        setAgentState("speaking", "AI Agent is speaking…", "");
         await ttsAudioPlayer.play().catch(() => {});
         ttsAudioPlayer.onended = () => {
           state.isSpeaking = false;
@@ -305,23 +373,55 @@
     }
   }
 
-  // Dialogue Append
-  function appendBubble(speaker, text) {
-    const placeholder = dialogueContainer.querySelector(".chat-placeholder");
-    if (placeholder) placeholder.remove();
+  // ─── DIALOGUE MESSAGES ────────────────────────────────────────────
+  function appendMessage(speaker, text) {
+    // Remove empty state
+    const empty = dialogueContainer.querySelector(".dialogue-empty");
+    if (empty) empty.remove();
 
-    const bubble = document.createElement("div");
-    bubble.className = `dialogue-bubble ${speaker}`;
-    bubble.innerHTML = `
-      <div class="bubble-meta">${speaker === "customer" ? "Caller" : "VoxDesk AI Agent"}</div>
-      <div class="bubble-body">${escapeHtml(text)}</div>
+    const row = document.createElement("div");
+    row.className = `msg-row ${speaker}`;
+    row.innerHTML = `
+      <div class="msg-label">${speaker === "customer" ? "Caller" : "VoxDesk AI"}</div>
+      <div class="msg-bubble">${escapeHtml(text)}</div>
     `;
 
-    dialogueContainer.appendChild(bubble);
-    dialogueContainer.scrollTop = dialogueContainer.scrollHeight;
+    dialogueContainer.appendChild(row);
+
+    // Auto-scroll — only if near bottom
+    const nearBottom = dialogueContainer.scrollHeight - dialogueContainer.scrollTop - dialogueContainer.clientHeight < 80;
+    if (nearBottom) {
+      dialogueContainer.scrollTop = dialogueContainer.scrollHeight;
+    }
   }
 
-  // Web Speech API
+  // ─── AGENT STATE ──────────────────────────────────────────────────
+  function setAgentState(stateKey, status, subLabel) {
+    // State badge
+    agentStatePill.setAttribute("data-state", stateKey);
+    agentStatePill.querySelector(".state-text").textContent = stateKey.toUpperCase();
+
+    // Visualizer text
+    if (callStatusText) callStatusText.textContent = status;
+    if (callSubLabel)   callSubLabel.textContent   = subLabel || "";
+
+    // Avatar class
+    const avatar = avatarCircle;
+    avatar.className = `agent-avatar state-${stateKey}`;
+
+    // Visualizer border
+    const wrap = document.getElementById("visualizerWrap");
+    if (wrap) {
+      wrap.classList.remove("active-call", "speaking");
+      if (stateKey === "listening" || stateKey === "connecting" || stateKey === "thinking") {
+        wrap.classList.add("active-call");
+      } else if (stateKey === "speaking") {
+        wrap.classList.add("speaking");
+      }
+    }
+  }
+
+  // ─── SPEECH RECOGNITION (preserved) ──────────────────────────────
   function setupSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
@@ -329,16 +429,14 @@
       return;
     }
 
-    const rec = new SpeechRec();
-    rec.continuous = true;
+    const rec        = new SpeechRec();
+    rec.continuous   = true;
     rec.interimResults = false;
 
     rec.onresult = (event) => {
       const last = event.results.length - 1;
       const text = event.results[last][0].transcript;
-      if (text && text.trim()) {
-        handleTurn(text.trim());
-      }
+      if (text && text.trim()) handleTurn(text.trim());
     };
 
     rec.onerror = (event) => {
@@ -347,7 +445,6 @@
 
     rec.onend = () => {
       if (state.isCalling) {
-        // Restart if still in call mode
         try { rec.start(); } catch (_) {}
       }
     };
@@ -355,15 +452,19 @@
     state.recognition = rec;
   }
 
-  // Start / End Call
+  // ─── CALL START / END (preserved + new state) ─────────────────────
   function startCall() {
     state.isCalling = true;
     startCallBtn.disabled = true;
-    endCallBtn.disabled = false;
-    avatarCircle.classList.add("active");
-    agentStatePill.textContent = "LISTENING";
-    agentStatePill.className = "live-pill calling";
-    callStatusText.textContent = "Live call active — speak into your microphone!";
+    endCallBtn.disabled   = false;
+
+    setAgentState("connecting", "Connecting to voice session…", "");
+
+    setTimeout(() => {
+      if (state.isCalling) {
+        setAgentState("listening", "Live call active — speak now", "Microphone active");
+      }
+    }, 800);
 
     if (state.recognition) {
       state.recognition.lang = callLanguage.value;
@@ -376,25 +477,23 @@
   }
 
   function endCall() {
-    state.isCalling = false;
+    state.isCalling  = false;
     state.isSpeaking = false;
     startCallBtn.disabled = false;
-    endCallBtn.disabled = true;
-    avatarCircle.classList.remove("active");
-    agentStatePill.textContent = "IDLE";
-    agentStatePill.className = "live-pill";
-    callStatusText.textContent = "Call terminated. Ready.";
+    endCallBtn.disabled   = true;
+
+    setAgentState("idle", "Call terminated. Ready.", "");
 
     if (state.recognition) {
       try { state.recognition.stop(); } catch (_) {}
     }
   }
 
-  // Tabs Navigation
+  // ─── TABS (preserved + indicator) ────────────────────────────────
   function setupTabs() {
-    document.querySelectorAll(".tab-btn").forEach(btn => {
+    document.querySelectorAll(".nav-tab").forEach(btn => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => {
+        document.querySelectorAll(".nav-tab").forEach(b => {
           b.classList.remove("active");
           b.setAttribute("aria-selected", "false");
         });
@@ -403,17 +502,17 @@
         btn.classList.add("active");
         btn.setAttribute("aria-selected", "true");
         const targetId = btn.getAttribute("data-tab");
-        const panel = document.getElementById(targetId);
+        const panel    = document.getElementById(targetId);
         if (panel) panel.classList.add("active");
         state.activeTab = targetId;
       });
     });
   }
 
-  // Setup Event Listeners
+  // ─── EVENT LISTENERS ──────────────────────────────────────────────
   function setupEventListeners() {
     startCallBtn.addEventListener("click", startCall);
-    endCallBtn.addEventListener("click", endCall);
+    endCallBtn.addEventListener("click",   endCall);
 
     sendTurnBtn.addEventListener("click", () => {
       const val = textTurnInput.value;
@@ -424,36 +523,40 @@
     });
 
     textTurnInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
         sendTurnBtn.click();
       }
     });
 
     clearChatBtn.addEventListener("click", () => {
       dialogueContainer.innerHTML = `
-        <div class="chat-placeholder">
-          <p>Speech will stream here in real-time as dialogue progresses.</p>
-        </div>
-      `;
+        <div class="dialogue-empty" id="dialogueEmpty">
+          <div class="dialogue-empty-icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <p>Dialogue streams here in real-time as calls progress.</p>
+        </div>`;
     });
 
-    // Knowledge Form Submit
+    // Knowledge Form
     addKnowledgeForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const text = docTextInput.value.trim();
+      const text    = docTextInput.value.trim();
       if (!text) return;
 
-      const saveBtn = document.getElementById("saveDocBtn");
+      const saveBtn = $("saveDocBtn");
       saveBtn.disabled = true;
-      saveBtn.textContent = "Indexing...";
+
+      const origContent = saveBtn.innerHTML;
+      saveBtn.innerHTML = `
+        <span class="spinner" style="width:14px;height:14px;border-width:2px" aria-hidden="true"></span>
+        Indexing…`;
 
       try {
         const res = await apiFetch("/knowledge", {
           method: "POST",
-          body: JSON.stringify({
-            organization_id: state.orgId,
-            text: text,
-          }),
+          body:   JSON.stringify({ organization_id: state.orgId, text }),
         });
 
         if (res.ok) {
@@ -466,28 +569,47 @@
         alert("Failed to add knowledge: " + err.message);
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = "Index & Store Document";
+        saveBtn.innerHTML = origContent;
       }
     });
 
-    // Refresh Buttons
-    document.getElementById("refreshTicketsBtn")?.addEventListener("click", loadTickets);
-    document.getElementById("refreshKnowledgeBtn")?.addEventListener("click", loadKnowledge);
-    document.getElementById("refreshCallsBtn")?.addEventListener("click", loadCalls);
+    // Refresh buttons
+    $("refreshTicketsBtn")?.addEventListener("click",   loadTickets);
+    $("refreshKnowledgeBtn")?.addEventListener("click", loadKnowledge);
+    $("refreshCallsBtn")?.addEventListener("click",     loadCalls);
 
     // Settings Modal
-    openSettingsBtn.addEventListener("click", () => settingsModal.showModal());
+    openSettingsBtn.addEventListener("click",  () => settingsModal.showModal());
     closeSettingsBtn.addEventListener("click", () => settingsModal.close());
+    settingsModal.addEventListener("click",    (e) => {
+      if (e.target === settingsModal) settingsModal.close();
+    });
+
     saveSettingsBtn.addEventListener("click", () => {
-      state.apiUrl = apiUrlInput.value.trim() || "http://127.0.0.1:8088";
+      state.apiUrl   = apiUrlInput.value.trim() || "http://127.0.0.1:8088";
       state.apiToken = apiTokenInput.value.trim();
-      localStorage.setItem("voxdesk_api_url", state.apiUrl);
+      localStorage.setItem("voxdesk_api_url",   state.apiUrl);
       localStorage.setItem("voxdesk_api_token", state.apiToken);
       settingsModal.close();
       pingBackend();
       loadAllData();
     });
 
+    // Theme buttons in modal
+    document.querySelectorAll(".theme-opt-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const val = btn.getAttribute("data-theme-val");
+        applyTheme(val);
+        setupThemeUI(val);
+      });
+    });
+
+    // Theme toggle in header cycles themes
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", cycleTheme);
+    }
+
+    // Org / phone inputs
     orgIdInput.addEventListener("change", () => {
       state.orgId = orgIdInput.value.trim() || "demo-org";
       localStorage.setItem("voxdesk_org_id", state.orgId);
@@ -498,56 +620,88 @@
       state.callerPhone = callerPhoneInput.value.trim() || "+91 98765 43210";
       localStorage.setItem("voxdesk_caller_phone", state.callerPhone);
     });
+
+    // Respect OS theme change when in system mode
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      if (state.theme === "system") applyTheme("system", false);
+    });
   }
 
-  // Waveform Canvas Animation
+  // ─── WAVEFORM CANVAS (enhanced) ───────────────────────────────────
   function setupCanvasAnimation() {
     if (!canvas || !ctx) return;
 
     function resize() {
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width  = rect.width;
+      canvas.height = rect.height;
     }
-    window.addEventListener("resize", resize);
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas.parentElement);
     resize();
 
+    function getThemeColors() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      return {
+        idle:    isDark ? "rgba(56,189,248,0.18)"  : "rgba(14,165,233,0.2)",
+        active:  isDark ? "rgba(14,165,233,0.55)"  : "rgba(14,165,233,0.6)",
+        speak:   isDark ? "rgba(16,185,129,0.6)"   : "rgba(16,185,129,0.65)",
+        think:   isDark ? "rgba(99,102,241,0.5)"   : "rgba(99,102,241,0.55)",
+        center:  isDark ? "rgba(255,255,255,0.06)"  : "rgba(0,0,0,0.05)",
+      };
+    }
+
     function draw() {
-      requestAnimationFrame(draw);
+      state.animFrameId = requestAnimationFrame(draw);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      state.waveformPhase += 0.04;
-      const width = canvas.width;
-      const height = canvas.height;
-      const centerY = height / 2;
+      state.waveformPhase += state.isSpeaking ? 0.07 : state.isCalling ? 0.05 : 0.025;
 
-      // Color and amplitude based on state
-      let amp = 8;
-      let strokeColor = "rgba(56, 189, 248, 0.25)";
+      const w   = canvas.width;
+      const h   = canvas.height;
+      const mid = h / 2;
+      const c   = getThemeColors();
+
+      let amp, baseColor, layers;
 
       if (state.isSpeaking) {
-        amp = 32;
-        strokeColor = "rgba(16, 185, 129, 0.75)";
+        amp = h * 0.28; baseColor = c.speak; layers = 4;
       } else if (state.isCalling) {
-        amp = 20;
-        strokeColor = "rgba(239, 68, 68, 0.65)";
+        amp = h * 0.18; baseColor = c.active; layers = 3;
+      } else {
+        amp = h * 0.055; baseColor = c.idle; layers = 2;
       }
 
-      // Draw 3 layered sine waves
-      for (let layer = 0; layer < 3; layer++) {
+      // Center line
+      ctx.beginPath();
+      ctx.moveTo(0, mid);
+      ctx.lineTo(w, mid);
+      ctx.strokeStyle = c.center;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Sine wave layers
+      for (let layer = 0; layer < layers; layer++) {
         ctx.beginPath();
-        ctx.lineWidth = 2 - layer * 0.4;
-        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth  = Math.max(1.2, 2.2 - layer * 0.4);
 
-        const phaseOffset = layer * 1.2;
-        const layerAmp = amp * (1 - layer * 0.25);
+        const alpha = 1 - layer * 0.22;
+        ctx.strokeStyle = baseColor.replace(/[\d.]+\)$/, m => {
+          const num = parseFloat(m);
+          return (num * alpha).toFixed(2) + ")";
+        });
 
-        for (let x = 0; x < width; x += 4) {
-          const normX = x / width;
-          const envelope = Math.sin(normX * Math.PI); // Pin edges to zero
-          const y = centerY + Math.sin(normX * 12 + state.waveformPhase + phaseOffset) * layerAmp * envelope;
+        const phaseOff = layer * 1.05;
+        const freqMul  = 9 + layer * 1.5;
+        const layerAmp = amp * (1 - layer * 0.18);
 
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+        ctx.moveTo(0, mid);
+        for (let x = 0; x <= w; x += 3) {
+          const nx  = x / w;
+          const env = Math.sin(nx * Math.PI); // pin edges
+          const y   = mid + Math.sin(nx * freqMul + state.waveformPhase + phaseOff) * layerAmp * env;
+          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
         ctx.stroke();
       }
@@ -556,7 +710,7 @@
     draw();
   }
 
-  // Utility
+  // ─── UTILITY ──────────────────────────────────────────────────────
   function escapeHtml(str) {
     if (!str) return "";
     return String(str)
@@ -567,7 +721,7 @@
       .replace(/'/g, "&#039;");
   }
 
-  // Run on DOM Ready
+  // ─── BOOT ─────────────────────────────────────────────────────────
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
