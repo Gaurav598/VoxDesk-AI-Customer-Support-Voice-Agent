@@ -422,7 +422,15 @@ def make_request_handler(router: JsonRouter):
     return RequestHandler
 
 
-def run(host: str = "127.0.0.1", port: int = 8088, db_path: str = "data/voice_agent.db") -> None:
+def run(
+    host: str | None = None,
+    port: int | None = None,
+    db_path: str | None = None,
+) -> None:
+    host = host or os.getenv("HOST", "0.0.0.0")
+    port = port or int(os.getenv("PORT", "8088"))
+    db_path = db_path or os.getenv("DATABASE_PATH", "data/voice_agent.db")
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     service = PlatformService.local(store=SQLiteStore(Path(db_path)))
     router = create_handler(service, api_token=os.getenv("VOICE_AGENT_API_TOKEN"))
     server = ThreadingHTTPServer((host, port), make_request_handler(router))

@@ -1,19 +1,65 @@
 services:
-  postgres:
-    image: postgres:16-alpine
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: voxdesk-backend:prod
+    container_name: voxdesk_backend
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: voice_agent
-      POSTGRES_PASSWORD: voice_agent
-      POSTGRES_DB: voice_agent
+      - HOST=0.0.0.0
+      - PORT=8088
+      - DATABASE_PATH=/app/data/voice_agent.db
+    volumes:
+      - voxdesk_data:/app/data
+
+  frontend:
+    build:
+      context: ../callagentix
+      dockerfile: Dockerfile
+    image: callagentix:prod
+    container_name: callagentix_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://callagentix:${POSTGRES_PASSWORD:-change-me}@db:5432/callagentix
+      - APP_BASE_URL=http://localhost:3000
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - PROVIDER_MODE=mock
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: callagentix_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: callagentix
+      POSTGRES_USER: callagentix
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U callagentix -d callagentix"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
+    container_name: voxdesk_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
 
 volumes:
-  postgres_data:
+  voxdesk_data:
+  pgdata:

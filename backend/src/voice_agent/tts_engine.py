@@ -221,7 +221,7 @@ def create_tts_engine(provider: str | None = None) -> TTSEngine:
         return ChatterboxTTSEngine()
     if selected_provider == "macos":
         return MacOSTTSEngine()
-    if selected_provider == "silent":
+    if selected_provider in ("silent", "local", "mock"):
         return SilentTTSEngine()
     raise ValueError(f"Unsupported TTS provider: {selected_provider}")
 
