@@ -78,8 +78,14 @@ class JsonRouter:
                 language=str(payload.get("language", "en-IN")),
             )
             return 200, {"Content-Type": audio.content_type}, audio.data
-        if method == "GET" and path == "/tickets":
+        if method == "GET" and route_path == "/tickets":
             return self._json(200, {"tickets": self.service.list_tickets()})
+        if method == "GET" and route_path == "/knowledge":
+            org_id = parse_qs(parsed_path.query).get("organization_id", [None])[-1]
+            return self._json(200, {"knowledge": self.service.list_knowledge(org_id)})
+        if method == "GET" and route_path == "/calls":
+            org_id = parse_qs(parsed_path.query).get("organization_id", [None])[-1]
+            return self._json(200, {"calls": self.service.list_calls(org_id)})
         return self._json(404, {"error": "not_found", "path": path})
 
     def _authorized(self, headers: dict[str, str]) -> bool:
@@ -396,6 +402,13 @@ def browser_call_test_page() -> str:
 
 def make_request_handler(router: JsonRouter):
     class RequestHandler(BaseHTTPRequestHandler):
+        def do_OPTIONS(self) -> None:
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Voice-Agent-Token, Authorization")
+            self.end_headers()
+
         def do_GET(self) -> None:
             self._handle({})
 
@@ -408,6 +421,7 @@ def make_request_handler(router: JsonRouter):
             request_headers = {name: value for name, value in self.headers.items()}
             status, headers, body = router.handle_json(self.command, self.path, payload, request_headers)
             self.send_response(status)
+            self.send_header("Access-Control-Allow-Origin", "*")
             for name, value in headers.items():
                 self.send_header(name, value)
             self.end_headers()

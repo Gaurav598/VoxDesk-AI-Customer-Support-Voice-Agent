@@ -68,6 +68,20 @@ class SQLiteStore:
             )
         return document_id
 
+    def list_knowledge(self, organization_id: str | None = None) -> list[dict]:
+        with self._connect() as connection:
+            if organization_id:
+                rows = connection.execute(
+                    "SELECT id, organization_id, text FROM knowledge_documents WHERE organization_id = ? ORDER BY rowid DESC",
+                    (organization_id,),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT id, organization_id, text FROM knowledge_documents ORDER BY rowid DESC"
+                ).fetchall()
+        return [{"id": row["id"], "organization_id": row["organization_id"], "text": row["text"]} for row in rows]
+
+
     def search_knowledge(self, organization_id: str, query: str, limit: int = 3) -> list[KnowledgeHit]:
         query_tokens = tokenize(query)
         if not query_tokens:
@@ -123,6 +137,30 @@ class SQLiteStore:
                 (call_id,),
             ).fetchall()
         return [f"{row['speaker']}: {row['text']}" for row in rows]
+
+    def list_calls(self, organization_id: str | None = None) -> list[dict]:
+        with self._connect() as connection:
+            if organization_id:
+                rows = connection.execute(
+                    "SELECT id, organization_id, caller_phone, mode, language FROM calls WHERE organization_id = ? ORDER BY rowid DESC",
+                    (organization_id,),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    "SELECT id, organization_id, caller_phone, mode, language FROM calls ORDER BY rowid DESC"
+                ).fetchall()
+        return [
+            {
+                "id": row["id"],
+                "organization_id": row["organization_id"],
+                "caller_phone": row["caller_phone"],
+                "mode": row["mode"],
+                "language": row["language"],
+                "turns": self.get_call_transcript(row["id"]),
+            }
+            for row in rows
+        ]
+
 
     def create_ticket(
         self,

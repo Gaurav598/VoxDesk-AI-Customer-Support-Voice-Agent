@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoxDesk — Enterprise AI Voice Agent Platform</title>
+  <meta name="description" content="Local-first autonomous voice agent console for business customer support.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambient backdrop glows -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <div class="app-layout">
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">VoxDesk <span class="badge-version">v0.1.0</span></div>
+          <div class="brand-subtitle">Autonomous AI Voice Agent Operations</div>
+        </div>
+      </div>
+
+      <div class="nav-controls">
+        <div class="status-indicator" id="serverStatusBadge">
+          <span class="status-dot pulsing"></span>
+          <span id="serverStatusText">Checking Backend...</span>
+        </div>
+
+        <div class="org-selector">
+          <label for="orgIdInput">Org:</label>
+          <input type="text" id="orgIdInput" value="demo-org" title="Organization ID">
+        </div>
+
+        <button class="btn-icon" id="openSettingsBtn" title="Backend Configuration">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="main-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="voice-console" id="tab-voice" role="tab" aria-selected="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+        Voice Console
+      </button>
+      <button class="tab-btn" data-tab="tickets-view" id="tab-tickets" role="tab" aria-selected="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+        Tickets (<span id="ticketCountBadge">0</span>)
+      </button>
+      <button class="tab-btn" data-tab="knowledge-view" id="tab-knowledge" role="tab" aria-selected="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+        Knowledge Base (<span id="knowledgeCountBadge">0</span>)
+      </button>
+      <button class="tab-btn" data-tab="calls-view" id="tab-calls" role="tab" aria-selected="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Call Transcripts (<span id="callsCountBadge">0</span>)
+      </button>
+    </nav>
+
+    <!-- Content Sections -->
+    <main class="tab-content-container">
+      
+      <!-- 1. Voice Console View -->
+      <section class="tab-panel active" id="voice-console" role="tabpanel">
+        <div class="console-grid">
+          <!-- Voice Visualizer & Controls Card -->
+          <div class="card voice-hub-card">
+            <div class="card-header">
+              <div class="header-left">
+                <span class="live-pill" id="agentStatePill">IDLE</span>
+                <h3>Live Call Interface</h3>
+              </div>
+              <div class="header-right">
+                <select id="callLanguage" class="select-pill" title="Audio Language">
+                  <option value="en-IN">🇮🇳 English (India)</option>
+                  <option value="hi-IN">🇮🇳 Hindi (India)</option>
+                  <option value="te-IN">🇮🇳 Telugu (India)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <div class="visualizer-container">
+              <canvas id="waveformCanvas" width="600" height="140"></canvas>
+              <div class="visualizer-overlay" id="visualizerOverlay">
+                <div class="agent-avatar" id="avatarCircle">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                </div>
+                <div class="visualizer-status" id="callStatusText">Ready to start voice conversation</div>
+              </div>
+            </div>
+
+            <!-- Call Action Toolbar -->
+            <div class="voice-actions">
+              <div class="caller-meta">
+                <label for="callerPhoneInput">Caller Phone / ID:</label>
+                <input type="text" id="callerPhoneInput" value="+91 98765 43210" class="input-flat">
+              </div>
+
+              <div class="action-buttons">
+                <button id="startCallBtn" class="btn btn-primary btn-call">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  Start Live Voice Call
+                </button>
+                <button id="endCallBtn" class="btn btn-danger" disabled>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" x2="2" y1="2" y2="22"/></svg>
+                  End Call
+                </button>
+              </div>
+            </div>
+
+            <!-- Text Input Fallback Area -->
+            <div class="text-turn-box">
+              <label for="textTurnInput">Or test by typing a customer query:</label>
+              <div class="turn-input-group">
+                <input type="text" id="textTurnInput" placeholder="e.g. 'I was charged 500 rupees but my order failed'..." class="input-flat">
+                <button id="sendTurnBtn" class="btn btn-secondary">Send Message</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Feed & Decision Radar -->
+          <div class="console-sidebar">
+            <!-- Decision Radar -->
+            <div class="card decision-card">
+              <h4>AI Decision Radar</h4>
+              <div class="decision-stats">
+                <div class="stat-item">
+                  <span class="stat-label">Detected Intent</span>
+                  <span class="stat-value" id="radarIntent">—</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Decision Status</span>
+                  <span class="stat-value" id="radarStatus">—</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Action Executed</span>
+                  <span class="stat-value highlight" id="radarActions">—</span>
+                </div>
+                <div class="stat-item" id="radarTicketBox" style="display:none;">
+                  <span class="stat-label">Ticket Generated</span>
+                  <span class="stat-value badge-ticket" id="radarTicketId">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Dialogue Transcript -->
+            <div class="card transcript-card">
+              <div class="card-header-sm">
+                <h4>Live Dialogue</h4>
+                <button id="clearChatBtn" class="btn-link">Clear</button>
+              </div>
+              <div class="dialogue-scroll" id="dialogueContainer">
+                <div class="chat-placeholder">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <p>Speech will stream here in real-time as dialogue progresses.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Support Tickets View -->
+      <section class="tab-panel" id="tickets-view" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Support Tickets</h3>
+              <p class="card-desc">Automatically opened by VoxDesk AI when caller reports unresolved issues or grievances.</p>
+            </div>
+            <button id="refreshTicketsBtn" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+              Refresh Tickets
+            </button>
+          </div>
+
+          <div class="tickets-grid" id="ticketsGrid">
+            <!-- Dynamic Ticket Cards -->
+            <div class="loading-state">Fetching tickets from SQLite store...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Knowledge Base View -->
+      <section class="tab-panel" id="knowledge-view" role="tabpanel">
+        <div class="knowledge-grid">
+          <!-- Add Knowledge Form -->
+          <div class="card">
+            <h3>Add Organization Knowledge</h3>
+            <p class="card-desc">Add business rules, policies, and FAQs. VoxDesk retrieves these during calls to formulate answers.</p>
+            <form id="addKnowledgeForm" class="form-vertical">
+              <div class="form-group">
+                <label for="docTextInput">Knowledge Text / Policy / FAQ:</label>
+                <textarea id="docTextInput" rows="5" class="input-flat" placeholder="e.g. 'If a customer reports money was deducted but order was not placed, assure them an automated refund is initiated within 3-5 business days and file a priority ticket.'"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" id="saveDocBtn">Index & Store Document</button>
+            </form>
+          </div>
+
+          <!-- Existing Knowledge List -->
+          <div class="card">
+            <div class="card-header-sm">
+              <h3>Indexed Documents</h3>
+              <button id="refreshKnowledgeBtn" class="btn-link">Refresh</button>
+            </div>
+            <div class="knowledge-list" id="knowledgeListContainer">
+              <div class="loading-state">Loading indexed knowledge...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Call Transcripts View -->
+      <section class="tab-panel" id="calls-view" role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Call Session History</h3>
+              <p class="card-desc">Complete audit trail of all telephone and browser conversations.</p>
+            </div>
+            <button id="refreshCallsBtn" class="btn btn-secondary">Refresh Calls</button>
+          </div>
+
+          <div class="calls-list" id="callsListContainer">
+            <div class="loading-state">Loading call sessions...</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <dialog id="settingsModal" class="custom-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>VoxDesk Backend Settings</h3>
+        <button id="closeSettingsBtn" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="apiUrlInput">Backend API URL:</label>
+          <input type="text" id="apiUrlInput" value="http://127.0.0.1:8088" class="input-flat">
+        </div>
+        <div class="form-group">
+          <label for="apiTokenInput">API Token (`VOICE_AGENT_API_TOKEN`):</label>
+          <input type="password" id="apiTokenInput" placeholder="Enter token from .env" class="input-flat">
+          <small class="hint">Matches `VOICE_AGENT_API_TOKEN` in `.env` (default: voxdesk_secret_token_2026)</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveSettingsBtn" class="btn btn-primary">Save & Connect</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Audio playback element -->
+  <audio id="ttsAudioPlayer" style="display:none;"></audio>
+
+  <script src="app.js"></script>
+</body>
+</html>

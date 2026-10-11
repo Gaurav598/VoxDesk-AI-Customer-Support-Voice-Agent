@@ -70,5 +70,12 @@ class PlatformService:
     def list_tickets(self) -> list[dict]:
         return [ticket.__dict__ for ticket in self.store.list_tickets()]
 
+    def list_knowledge(self, organization_id: str | None = None) -> list[dict]:
+        return self.store.list_knowledge(organization_id)
+
+    def list_calls(self, organization_id: str | None = None) -> list[dict]:
+        return self.store.list_calls(organization_id)
+
     def get_call_transcript(self, call_id: str) -> list[str]:
         return self.store.get_call_transcript(call_id)
+
